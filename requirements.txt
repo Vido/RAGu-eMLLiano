@@ -1,3 +1,5 @@
 Flask==1.1.2
 Flask-Cors==3.0.9
-cfenv==0.5.3 
+cfenv==0.5.3
+generative-ai-hub-sdk
+hdbcli
