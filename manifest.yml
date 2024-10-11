@@ -1,0 +1,5 @@
+---
+applications:
+- memory: 128MB
+  disk_quota: 512MB
+  random-route: true 
