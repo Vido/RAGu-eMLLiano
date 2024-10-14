@@ -49,7 +49,7 @@ def get_prompt():
     from langchain.prompts import PromptTemplate
     prompt_template = "You are a helpful AI bot. Context: {context} Question: {question}"
     return PromptTemplate(
-        template = prompt_template, 
+        template = prompt_template,
         input_variables=["context", "question"])
 
 @app.route('/')
@@ -66,11 +66,11 @@ def chat():
 
     from langchain.chains import RetrievalQA
     qa = RetrievalQA.from_chain_type(llm=get_llm(),
-                     retriever=retriever, 
+                     retriever=retriever,
                      chain_type="stuff",
                      chain_type_kwargs={"prompt": get_prompt()})
 
-    answer = qa.run(question)
+    answer = qa.invoke(question)
     return answer
 
 if __name__ == '__main__':
