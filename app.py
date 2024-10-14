@@ -6,7 +6,8 @@ app = Flask(__name__)
 
 
 from gen_ai_hub.proxy.langchain.init_models import init_embedding_model
-embeddings = init_embedding_model('text-embedding-ada-002')
+#embeddings = init_embedding_model('text-embedding-ada-002')
+embeddings = init_embedding_model('text-embedding-3-small')
 # DOCS: check the ~/.aicore/config.json
 
 
@@ -41,7 +42,8 @@ def get_llm():
     from gen_ai_hub.proxy.core.proxy_clients import get_proxy_client
 
     proxy_client = get_proxy_client('gen-ai-hub')
-    return ChatOpenAI(proxy_model_name='gpt-35-turbo', proxy_client=proxy_client)
+    #return ChatOpenAI(proxy_model_name='gpt-35-turbo', proxy_client=proxy_client)
+    return ChatOpenAI(proxy_model_name='gpt-4o-mini', proxy_client=proxy_client)
 
 def get_prompt():
     from langchain.prompts import PromptTemplate
