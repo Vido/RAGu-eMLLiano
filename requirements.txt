@@ -1,5 +1,6 @@
-Flask==1.1.2
-Flask-Cors==3.0.9
-cfenv==0.5.3
-generative-ai-hub-sdk
+Flask >= 3.0.3
+python-decouple
+python-dotenv
+generative-ai-hub-sdk[all]
 hdbcli
+# git+https://tinyurl.com/ynnj4psz
