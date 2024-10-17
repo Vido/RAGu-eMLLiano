@@ -4,16 +4,14 @@ from decouple import config
 from flask import Flask, request
 app = Flask(__name__)
 
-
-from gen_ai_hub.proxy.langchain.init_models import init_embedding_model
-#embeddings = init_embedding_model('text-embedding-ada-002')
-embeddings = init_embedding_model('text-embedding-3-small')
-# DOCS: check the ~/.aicore/config.json
-
-
 def get_vector_db():
     from hdbcli import dbapi
     from langchain_community.vectorstores.hanavector import HanaDB
+
+    from gen_ai_hub.proxy.langchain.init_models import init_embedding_model
+    #embeddings = init_embedding_model('text-embedding-ada-002')
+    embeddings = init_embedding_model('text-embedding-3-small')
+    # DOCS: check the ~/.aicore/config.json
 
     hdb_user = config("SAP_HANA_USER")
     connection = dbapi.connect(
@@ -61,6 +59,7 @@ def chat():
     question = request.args.get('q')
     if not question:
         return "Please, use the ?q= to send questions."
+
     db = get_vector_db()
     retriever = db.as_retriever(search_kwargs={'k':20})
 

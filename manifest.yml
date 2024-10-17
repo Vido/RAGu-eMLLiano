@@ -1,5 +1,5 @@
 ---
 applications:
-- memory: 128MB
-  disk_quota: 512MB
+- memory: 256MB
+  disk_quota: 2048MB
   random-route: true 

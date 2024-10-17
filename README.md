@@ -1,3 +1,12 @@
+### Deploy
+
+```
+cf login --origin -a https://api.cf.us10-001.hana.ondemand.com
+cf target -o "CUSTOMERTIMES_UK LTD_sub-1-jk5e0ugw" -s dev
+cf push
+```
+
+
 ### Resources
 
 * https://community.sap.com/t5/technology-blogs-by-sap/how-to-setup-business-application-studio-for-python-development/ba-p/13727665
