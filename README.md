@@ -3,7 +3,8 @@
 ```
 cf login --origin -a https://api.cf.us10-001.hana.ondemand.com
 cf target -o "CUSTOMERTIMES_UK LTD_sub-1-jk5e0ugw" -s dev
-cf push
+cf push RAGu-eMLLiano
+cf logs RAGu-eMLLiano --recent
 ```
 
 
