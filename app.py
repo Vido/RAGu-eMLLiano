@@ -51,7 +51,7 @@ def get_prompt():
 
 @app.route('/')
 def hello():
-    return 'RAGu eMLLiano - Use the /chat endpoint'
+    return render_template('index.html')
 
 @app.route('/chat', methods=['GET'])
 def chat():
