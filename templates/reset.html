@@ -1,16 +1,15 @@
 {% extends "layout.html" %}
 {% block body %}
-    <h1>RAGu eMLLiano 🍝 </h1>
+    <h1>Reset Context</h1>
+
+    <h2>Are you Sure?</h2>
     <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
+      <input type=submit value=Yes>
     </form>
 
-    <h2>Endpoints:</h2>
+    <h2>Upload Context:</h2>
     <ul>
-	    <li><a href='/chat'>/chat -> Send questions</li>
 	    <li><a href='/upload'>/upload -> Upload PDF files as context</li>
 	    <li><a href='/embed_docs'>/embed_docs -> Process uploaded files</li>
-	    <li><a href='/reset'>/reset -> Reset/Clear the Context/Database</li>
     </ul>
 {% endblock %}

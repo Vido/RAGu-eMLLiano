@@ -3,6 +3,7 @@ python-dotenv
 python-decouple
 generative-ai-hub-sdk[all]
 hdbcli
+pypdf
 
 # 
 # git+https://tinyurl.com/ynnj4psz

@@ -10,31 +10,37 @@ app.config['PROPAGATE_EXCEPTIONS'] = config('DEBUG', cast=bool, default=True)
 app.config['UPLOAD_FOLDER'] = config('UPLOAD_FOLDER', default='upload/')
 app.config['SESSION_TYPE'] = 'filesystem'
 
-def get_vector_db():
-    from hdbcli import dbapi
-    from langchain_community.vectorstores.hanavector import HanaDB
+DB, EMBEDDINGS = None, None
 
-    from gen_ai_hub.proxy.langchain.init_models import init_embedding_model
-    #embeddings = init_embedding_model('text-embedding-ada-002')
-    embeddings = init_embedding_model('text-embedding-3-small')
-    # DOCS: check the ~/.aicore/config.json
+def init_vector_db():
+    global DB, EMBEDDINGS
+    if EMBEDDINGS is None:
+        from gen_ai_hub.proxy.langchain.init_models import init_embedding_model
+        #embeddings = init_embedding_model('text-embedding-ada-002')
+        embeddings = init_embedding_model('text-embedding-3-small')
+        # DOCS: check the ~/.aicore/config.json
+        EMBEDDINGS = embeddings
 
-    hdb_user = config('SAP_HANA_USER')
-    connection = dbapi.connect(
-        config('SAP_HANA_HOST'),
-        port=443,
-        user=hdb_user,
-        password=config('SAP_HANA_PASS'),
-        autocommit=True,
-        #sslValidateCertificate=False,
-    )
-    db = HanaDB(embedding=embeddings, connection=connection,
-        table_name='CATALOG_UPDATED_DEV_1_' + hdb_user)
+    if DB is None:
+        from hdbcli import dbapi
+        from langchain_community.vectorstores.hanavector import HanaDB
+        hdb_user = config('SAP_HANA_USER')
+        connection = dbapi.connect(
+            config('SAP_HANA_HOST'),
+            port=443,
+            user=hdb_user,
+            password=config('SAP_HANA_PASS'),
+            autocommit=True,
+            #sslValidateCertificate=False,
+        )
 
-    return db, embeddings
+        db = HanaDB(embedding=embeddings, connection=connection,
+            table_name='CATALOG_UPDATED_DEV_1_' + hdb_user)
+        DB = db
+
+        return DB, EMBEDDINGS
 
 def get_llm():
-
     from gen_ai_hub.proxy.langchain.openai import ChatOpenAI
     from gen_ai_hub.proxy.core.proxy_clients import get_proxy_client
 
@@ -59,8 +65,8 @@ def chat():
     if not question:
         return 'Please, use the ?q= to send questions.'
 
-    db, embeddings = get_vector_db()
-    retriever = db.as_retriever(search_kwargs={'k':20})
+    init_vector_db()
+    retriever = DB.as_retriever(search_kwargs={'k':20})
 
     from langchain.chains import RetrievalQA
     qa = RetrievalQA.from_chain_type(llm=get_llm(),
@@ -105,13 +111,43 @@ def upload():
     return render_template('upload.html',
             uploaded_files=get_uploaded_files())
 
+@app.route('/reset', methods=['GET', 'POST'])
+def reset():
+    if request.method == 'POST':
+        init_vector_db()
+        DB.delete(filter={})
+        flash(f'Context Reseted! ✌️', 'success')
+
+    return render_template('reset.html',
+            uploaded_files=get_uploaded_files())
+
+
 @app.route('/embed_docs', methods=['GET', 'POST'])
 def embed_docs():
     from langchain_community.document_loaders import PyPDFLoader
+    from langchain.text_splitter import CharacterTextSplitter
+
     uploaded_files=get_uploaded_files()
 
     if request.method == 'POST':
-        db, embeddings = get_vector_db()
+
+        text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        init_vector_db()
+        DB.delete(filter={})
+
+        for filepath in uploaded_files:
+            documents = []
+            loader = PyPDFLoader(filepath)
+            for n, doc_page in enumerate(loader.lazy_load()):
+                print(f'Embeddings {filepath}, page {n}')
+                documents.append(doc_page)
+
+            print(f'Uploading documents to HANA DB...')
+            text_chunks = text_splitter.split_documents(documents)
+            DB.add_documents(text_chunks)
+            print(f'Uploading DONE!')
+
+        flash(f'Files embeded into HANA! ✌️', 'success')
 
     return render_template('embed_docs.html',
             uploaded_files=uploaded_files)
