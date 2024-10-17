@@ -116,7 +116,9 @@ def reset():
     if request.method == 'POST':
         init_vector_db()
         DB.delete(filter={})
-        flash(f'Context Reseted! ✌️', 'success')
+        for f in get_uploaded_files():
+            f.unlink()
+        flash(f'HANA and Files Reseted! ✌️', 'success')
 
     return render_template('reset.html',
             uploaded_files=get_uploaded_files())
