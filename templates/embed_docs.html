@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block body %}
+    <h1>Process Files</h1>
+
+    <h2>Files in the Repository:</h2>
+
+    <ul>
+    {% for filename in uploaded_files %}
+      <li>{{ filename }}</li>
+    {% endfor %}
+    </ul>
+
+    
+    <h2>Are you Sure?</h2>
+    <form method=post enctype=multipart/form-data>
+      <input type=submit value=Yes>
+    </form>
+
+{% endblock %}

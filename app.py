@@ -31,7 +31,7 @@ def get_vector_db():
     db = HanaDB(embedding=embeddings, connection=connection,
         table_name='CATALOG_UPDATED_DEV_1_' + hdb_user)
 
-    return db
+    return db, embeddings
 
 def get_llm():
 
@@ -59,7 +59,7 @@ def chat():
     if not question:
         return 'Please, use the ?q= to send questions.'
 
-    db = get_vector_db()
+    db, embeddings = get_vector_db()
     retriever = db.as_retriever(search_kwargs={'k':20})
 
     from langchain.chains import RetrievalQA
@@ -70,6 +70,10 @@ def chat():
 
     answer = qa.invoke(question)
     return answer
+
+def get_uploaded_files():
+    p = Path(app.config['UPLOAD_FOLDER']).glob('**/*')
+    return [x for x in p if x.is_file() and not x.name.startswith('.')]
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
@@ -95,10 +99,22 @@ def upload():
             flash(f'Filetype is not supported: {suffix}', 'error')
 
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        file.save(Path(app.config['UPLOAD_FOLDER']) / filename)
         flash(f'File Upload! ✌️', 'success')
 
-    return render_template('upload.html')
+    return render_template('upload.html',
+            uploaded_files=get_uploaded_files())
+
+@app.route('/embed_docs', methods=['GET', 'POST'])
+def embed_docs():
+    from langchain_community.document_loaders import PyPDFLoader
+    uploaded_files=get_uploaded_files()
+
+    if request.method == 'POST':
+        db, embeddings = get_vector_db()
+
+    return render_template('embed_docs.html',
+            uploaded_files=uploaded_files)
 
 if __name__ == '__main__':
     # Port number is required to fetch from env variable
