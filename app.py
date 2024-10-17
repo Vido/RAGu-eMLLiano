@@ -2,13 +2,15 @@ import os
 from pathlib import Path
 
 from decouple import config
-from flask import Flask, request, render_template, flash
+from flask import Flask, request, render_template, flash, redirect
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = config('SECRET_KEY', default='super secret key')
 app.config['PROPAGATE_EXCEPTIONS'] = config('DEBUG', cast=bool, default=True)
 app.config['UPLOAD_FOLDER'] = config('UPLOAD_FOLDER', default='upload/')
 app.config['SESSION_TYPE'] = 'filesystem'
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 DB, EMBEDDINGS = None, None
 
@@ -59,23 +61,35 @@ def get_prompt():
 def hello():
     return render_template('index.html')
 
-@app.route('/chat', methods=['GET'])
-def chat():
-    question = request.args.get('q')
-    if not question:
-        return 'Please, use the ?q= to send questions.'
-
+def _chat(question):
+    from langchain.chains import RetrievalQA
     init_vector_db()
     retriever = DB.as_retriever(search_kwargs={'k':20})
-
-    from langchain.chains import RetrievalQA
     qa = RetrievalQA.from_chain_type(llm=get_llm(),
                      retriever=retriever,
                      chain_type='stuff',
                      chain_type_kwargs={'prompt': get_prompt()})
-
     answer = qa.invoke(question)
     return answer
+
+@app.route('/api/chat', methods=['GET'])
+def api_chat():
+    question = request.args.get('q')
+    if not question:
+        return 'Please, use the ?q= to send questions.'
+    return _chat(question)
+
+@app.route('/chat', methods=['GET', 'POST'])
+def ui_chat():
+    question, answer = '', ''
+    if request.method == 'POST':
+        question = request.form['question']
+        ivk = _chat(question)
+        question, answer = ivk['query'], ivk['result']
+
+    return render_template('chat.html',
+        question=question,
+        answer=answer)
 
 def get_uploaded_files():
     p = Path(app.config['UPLOAD_FOLDER']).glob('**/*')
