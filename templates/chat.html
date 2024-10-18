@@ -1,21 +1,20 @@
 {% extends "layout.html" %}
 {% block body %}
-    <h1>Ask a Question</h1>
+    <h2>Ask a Question</h2>
     <form method=post>
       <input type=input name=question>
       <input type=submit value=Ask!>
     </form>
 
     {% if answer %}
-    <p><b>{{ question }}</b></p>
-    <br>
-    <p>{{ answer }}</p>
+    <h3>{{ question }}</h3>
+    <div id="content" style="width:50%">{{ answer }}</div>
     {% endif %}
 
-    <h2>Files in the Repository:</h2>
-    <ul>
-    {% for filename in uploaded_files %}
-      <li>{{ filename }}</li>
-    {% endfor %}
-    </ul>
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <script>
+	    let original_text = document.getElementById('content').innerHTML
+	    document.getElementById('content').innerHTML =
+	      marked.parse(original_text);
+      </script>
 {% endblock %}
