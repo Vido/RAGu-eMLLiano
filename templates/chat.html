@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block body %}
+    <h1>Ask a Question</h1>
+    <form method=post>
+      <input type=input name=question>
+      <input type=submit value=Ask!>
+    </form>
+
+    {% if answer %}
+    <p><b>{{ question }}</b></p>
+    <br>
+    <p>{{ answer }}</p>
+    {% endif %}
+
+    <h2>Files in the Repository:</h2>
+    <ul>
+    {% for filename in uploaded_files %}
+      <li>{{ filename }}</li>
+    {% endfor %}
+    </ul>
+{% endblock %}

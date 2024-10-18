@@ -1,16 +1,4 @@
 {% extends "layout.html" %}
 {% block body %}
-    <h1>RAGu eMLLiano 🍝 </h1>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-
-    <h2>Endpoints:</h2>
-    <ul>
-	    <li><a href='/chat'>/chat -> Send questions</li>
-	    <li><a href='/upload'>/upload -> Upload PDF files as context</li>
-	    <li><a href='/embed_docs'>/embed_docs -> Process uploaded files</li>
-	    <li><a href='/reset'>/reset -> Reset/Clear the Context/Database</li>
-    </ul>
+    <p>Please, load you PDFs, and embbed them into Hana.</p>
 {% endblock %}

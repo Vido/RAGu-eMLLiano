@@ -9,4 +9,19 @@
     </ul>
   {% endif %}
 {% endwith %}
+<h1>RAGu eMLLiano 🍝 </h1>
 {% block body %}{% endblock %}
+<hr>
+{% block nav %}
+    <h2>API Endpoints:</h2>
+    <ul>
+	    <li><a href='/api/chat'>/api/chat -> Send questions</a></li>
+    </ul>
+    <h2>UI Endpoints:</h2>
+    <ul>
+	    <li><a href='/chat'>/chat -> Send questions</a></li>
+	    <li><a href='/upload'>/upload -> Upload PDF files as context</a></li>
+	    <li><a href='/embed_docs'>/embed_docs -> Process uploaded files</a></li>
+	    <li><a href='/reset'>/reset -> Reset/Clear the Context/Database</a></li>
+    </ul>
+{% endblock %}
