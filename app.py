@@ -36,7 +36,7 @@ def init_vector_db():
             #sslValidateCertificate=False,
         )
 
-        db = HanaDB(embedding=embeddings, connection=connection,
+        db = HanaDB(embedding=EMBEDDINGS, connection=connection,
             table_name='CATALOG_UPDATED_DEV_1_' + hdb_user)
         DB = db
 
