@@ -3,7 +3,9 @@ from pathlib import Path
 
 from decouple import config
 from flask import Flask, request, render_template, flash, redirect
+from flask.json import jsonify
 from flask_cors import CORS
+
 
 app = Flask(__name__)
 app.secret_key = config('SECRET_KEY', default='super secret key')
@@ -72,11 +74,16 @@ def _chat(question):
     answer = qa.invoke(question)
     return answer
 
-@app.route('/api/chat', methods=['GET'])
+@app.route('/api/chat', methods=['POST'])
 def api_chat():
-    question = request.args.get('q')
+    """
+        Exemple:
+        url -X POST http://127.0.0.1:5000/api/chat -d '{"question": "What are the healthcare benefits?"}'
+    """
+    data = request.get_json(force=True)
+    question = data.get('question', '') or data.get('q', '')
     if not question:
-        return 'Please, use the ?q= to send questions.'
+        return jsonify({'msg': 'Please, use the JSON {"question": ""} format to interact.'}), 400
     return _chat(question)
 
 @app.route('/chat', methods=['GET', 'POST'])
@@ -95,32 +102,69 @@ def get_uploaded_files():
     p = Path(app.config['UPLOAD_FOLDER']).glob('**/*')
     return [x for x in p if x.is_file() and not x.name.startswith('.')]
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload():
+def _upload(request):
     """
         From: https://flask.palletsprojects.com/en/2.3.x/patterns/fileuploads/
     """
     from werkzeug.utils import secure_filename
+
+    print(request.files)
+
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        raise Exception('No file part')
+
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    file = request.files['file']
+    if file.filename == '':
+        raise Exception('No selected file')
+
+    suffix = Path(file.filename).suffix
+    if not suffix in ['.pdf']:
+        raise Exception(f'Filetype is not supported: {suffix}')
+
+    filename = secure_filename(file.filename)
+    file.save(Path(app.config['UPLOAD_FOLDER']) / filename)
+
+    return filename
+
+@app.route('/api/files', methods=['GET', 'POST', 'DELETE'])
+def api_upload():
+    """
+        Exemple:
+        curl http://127.0.0.1:5000/api/files
+        curl -X POST -H "Content-Type: multipart/form-data" -F "file=@myfile.pdf" http://127.0.0.1:5000/api/files
+        curl -X DELETE http://127.0.0.1:5000/api/files
+    """
+
+    http_code, msg = 200, ''
     if request.method == 'POST':
-        # check if the post request has the file part
-        if 'file' not in request.files:
-            flash('No file part', 'error')
+        try:
+            _upload(request)
+            http_code = 201
+        except Exception as e:
+            http_code, msg = 400, str(e)
+ 
+    files = get_uploaded_files()
+
+    if request.method == 'DELETE':
+        for f in files:
+            f.unlink(missing_ok=True)
+        http_code, msg = 205, 'Files Reseted!'
+
+    return jsonify({'msg': msg, 'files': [str(f) for f in files]}), http_code
+
+@app.route('/upload', methods=['GET', 'POST'])
+def ui_upload():
+
+    if request.method == 'POST':
+        try:
+            _upload(request)
+            flash(f'File Upload! ✌️', 'success')
+        except Exception as e:
+            flash(str(e), 'error')
             return redirect(request.url)
-
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        file = request.files['file']
-        if file.filename == '':
-            flash('No selected file', 'error')
-            return redirect(request.url)
-
-        suffix = Path(file.filename).suffix
-        if not suffix in ['.pdf']:
-            flash(f'Filetype is not supported: {suffix}', 'error')
-
-        filename = secure_filename(file.filename)
-        file.save(Path(app.config['UPLOAD_FOLDER']) / filename)
-        flash(f'File Upload! ✌️', 'success')
 
     return render_template('upload.html',
             uploaded_files=get_uploaded_files())
@@ -131,38 +175,51 @@ def reset():
         init_vector_db()
         DB.delete(filter={})
         for f in get_uploaded_files():
-            f.unlink()
+            f.unlink(missing_ok=True)
         flash(f'HANA and Files Reseted! ✌️', 'success')
 
     return render_template('reset.html',
             uploaded_files=get_uploaded_files())
 
-
-@app.route('/embed_docs', methods=['GET', 'POST'])
-def embed_docs():
+def _embed(uploaded_files = get_uploaded_files()):
     from langchain_community.document_loaders import PyPDFLoader
     from langchain.text_splitter import CharacterTextSplitter
 
-    uploaded_files=get_uploaded_files()
+    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    init_vector_db()
 
-    if request.method == 'POST':
+    for filepath in uploaded_files:
+        documents = []
+        loader = PyPDFLoader(filepath)
+        for n, doc_page in enumerate(loader.lazy_load()):
+            print(f'Embeddings {filepath}, page {n}')
+            documents.append(doc_page)
 
-        text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        print(f'Uploading documents to HANA DB...')
+        text_chunks = text_splitter.split_documents(documents)
+        DB.add_documents(text_chunks)
+        print(f'Uploading DONE!')
+
+@app.route('/api/embed_docs', methods=['PUT', 'DELETE'])
+def api_embed_docs():
+
+    if request.method == 'DELETE':
         init_vector_db()
         DB.delete(filter={})
+        http_code, msg = 205, 'HANA DB Reseted'
+   
+    if request.method == 'PUT':
+        _embed()
+        http_code, msg = 202, 'Documents embedded into HANA DB.'
 
-        for filepath in uploaded_files:
-            documents = []
-            loader = PyPDFLoader(filepath)
-            for n, doc_page in enumerate(loader.lazy_load()):
-                print(f'Embeddings {filepath}, page {n}')
-                documents.append(doc_page)
+    return jsonify({'msg': msg}), http_code
 
-            print(f'Uploading documents to HANA DB...')
-            text_chunks = text_splitter.split_documents(documents)
-            DB.add_documents(text_chunks)
-            print(f'Uploading DONE!')
+@app.route('/embed_docs', methods=['GET', 'POST'])
+def ui_embed_docs():
 
+    uploaded_files = get_uploaded_files()
+    if request.method == 'POST':
+        _embed(uploaded_files)
         flash(f'Files embeded into HANA! ✌️', 'success')
 
     return render_template('embed_docs.html',
