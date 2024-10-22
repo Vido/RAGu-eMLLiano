@@ -78,7 +78,7 @@ def _chat(question):
 def api_chat():
     """
         Exemple:
-        url -X POST http://127.0.0.1:5000/api/chat -d '{"question": "What are the healthcare benefits?"}'
+        curl -X POST http://127.0.0.1:5000/api/chat -d '{"question": "What are the healthcare benefits?"}'
     """
     data = request.get_json(force=True)
     question = data.get('question', '') or data.get('q', '')
