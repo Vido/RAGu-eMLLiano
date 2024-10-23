@@ -1,4 +1,32 @@
 {% extends "layout.html" %}
 {% block body %}
-    <p>Please, load you PDFs, and embbed them into Hana.</p>
+    <p>In order to use Retrieval-augmented generation, please follow:</p>
+    <ul>
+	<li>Upload your files. Formats allowed: .pdf or .docx</a></li>
+	<li>Embed Documents into the Hana DB</a></li>
+	<li>Happy Chatting! ☺️</a></li>
+    </ul>
+
+
+{% endblock %}
+{% block nav_api %}
+    <h2>API Endpoints:</h2>
+    <ul>
+	<li><a href='/api/files'>/api/files</a> [GET, POST, DELETE] Use: -F "file=@myfile.pdf" </a></li>
+	<li><a href='/api/embed_docs'>/api/embed_docs</a> [PUT, DELETE] </a></li>
+	<li><a href='/api/chat'>/api/chat</a>[POST] JSON {"q": What are the healthcare benefits?"}</li>
+    </ul>
+    <h3>API Examples:</h3>
+    <textarea style="width: 850px; height: 150px;">
+	# Setup the aplication
+	curl http://127.0.0.1:5000/api/files
+        curl -X POST -H "Content-Type: multipart/form-data" -F "file=@myfile.pdf" http://127.0.0.1:5000/api/files
+	curl -X PUT http://127.0.0.1:5000/api/embed_docs
+	curl -X POST http://127.0.0.1:5000/api/chat -d '{"question": "What are the healthcare benefits?"}'
+
+	# Reset the aplication
+	url -X DELETE http://127.0.0.1:5000/api/files
+	url -X DELETE http://127.0.0.1:5000/api/embed_docs
+    </textarea>
+
 {% endblock %}
