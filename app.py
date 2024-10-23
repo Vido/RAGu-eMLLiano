@@ -121,7 +121,7 @@ def _upload(request):
         raise Exception('No selected file')
 
     suffix = Path(file.filename).suffix
-    if not suffix in ['.pdf']:
+    if not suffix in ['.docx', '.pdf']:
         raise Exception(f'Filetype is not supported: {suffix}')
 
     filename = secure_filename(file.filename)
@@ -183,22 +183,27 @@ def reset():
 
 def _embed(uploaded_files = get_uploaded_files()):
     from langchain_community.document_loaders import PyPDFLoader
+    from langchain_community.document_loaders import Docx2txtLoader
+    from langchain.document_loaders import UnstructuredWordDocumentLoader
     from langchain.text_splitter import CharacterTextSplitter
 
-    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    print('Loading Embeddings and HANA DB...')
     init_vector_db()
+    print('... DONE!')
+    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    loader_factory = lambda f: {'.pdf': PyPDFLoader, '.docx': UnstructuredWordDocumentLoader}[f.suffix](str(f))
 
     for filepath in uploaded_files:
         documents = []
-        loader = PyPDFLoader(filepath)
+        loader = loader_factory(filepath)
         for n, doc_page in enumerate(loader.lazy_load()):
             print(f'Embeddings {filepath}, page {n}')
             documents.append(doc_page)
 
-        print(f'Uploading documents to HANA DB...')
+        print('Uploading documents to HANA DB...')
         text_chunks = text_splitter.split_documents(documents)
         DB.add_documents(text_chunks)
-        print(f'Uploading DONE!')
+        print('Uploading DONE!')
 
 @app.route('/api/embed_docs', methods=['PUT', 'DELETE'])
 def api_embed_docs():

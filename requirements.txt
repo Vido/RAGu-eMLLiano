@@ -5,6 +5,9 @@ python-decouple
 generative-ai-hub-sdk[all]
 hdbcli
 pypdf
+docx2txt
+python-docx
+unstructured
 
 # 
 # git+https://tinyurl.com/ynnj4psz
